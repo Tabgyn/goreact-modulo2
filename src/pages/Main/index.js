@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import moment from 'moment';
+import { thisExpression } from '@babel/types';
 import api from '../../services/api';
 
 import { Container, Form } from './styles';
@@ -9,6 +10,7 @@ import CompareList from '../../components/CompareList';
 
 export default class Main extends Component {
   state = {
+    loading: false,
     repositoryError: false,
     repositoryInput: '',
     repositories: [],
@@ -16,6 +18,8 @@ export default class Main extends Component {
 
   handleAddRepository = async (e) => {
     e.preventDefault();
+
+    this.setState({ loading: true });
 
     const { repositoryInput, repositories } = this.state;
 
@@ -31,11 +35,15 @@ export default class Main extends Component {
       });
     } catch (error) {
       this.setState({ repositoryError: true });
+    } finally {
+      this.setState({ loading: false });
     }
   };
 
   render() {
-    const { repositoryError, repositoryInput, repositories } = this.state;
+    const {
+      loading, repositoryError, repositoryInput, repositories,
+    } = this.state;
 
     return (
       <Container>
@@ -45,10 +53,10 @@ export default class Main extends Component {
           <input
             type="text"
             placeholder="usuário/repositório"
-            values={repositoryInput}
+            value={repositoryInput}
             onChange={e => this.setState({ repositoryInput: e.target.value })}
           />
-          <button type="submit">Ok</button>
+          <button type="submit">{loading ? <i className="fa fa-spinner fa-pulse" /> : 'Ok'}</button>
         </Form>
 
         <CompareList repositories={repositories} />
