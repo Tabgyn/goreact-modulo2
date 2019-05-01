@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import moment from 'moment';
-import { thisExpression } from '@babel/types';
-import api from '../../services/api';
 
 import { Container, Form } from './styles';
 import logo from '../../assets/logo.png';
+import api from '../../services/api';
 
 import CompareList from '../../components/CompareList';
 
@@ -15,6 +14,23 @@ export default class Main extends Component {
     repositoryInput: '',
     repositories: [],
   };
+
+  componentDidMount() {
+    const localState = JSON.parse(localStorage.getItem('myState'));
+
+    if (localState) {
+      this.setState({ repositories: localState.repositories });
+    }
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    const { repositories } = this.state;
+    if (nextState.repositories !== repositories && typeof Storage !== 'undefined') {
+      localStorage.setItem('myState', JSON.stringify(nextState));
+    }
+
+    return true;
+  }
 
   handleAddRepository = async (e) => {
     e.preventDefault();
@@ -27,6 +43,10 @@ export default class Main extends Component {
       const { data: repository } = await api.get(`repos/${repositoryInput}`);
 
       repository.lastCommit = moment(repository.pushed_at).fromNow();
+
+      if (repositories.find(repo => repo.id === repository.id)) {
+        throw new Error('Repository already added');
+      }
 
       this.setState({
         repositoryInput: '',
@@ -44,7 +64,6 @@ export default class Main extends Component {
     const {
       loading, repositoryError, repositoryInput, repositories,
     } = this.state;
-
     return (
       <Container>
         <img src={logo} alt="GitHub Compare" />
