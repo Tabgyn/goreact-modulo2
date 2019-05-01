@@ -30,10 +30,10 @@ export const Form = styled.form`
     padding: 0 20px;
     margin-left: 10px;
     background: #63f5b0;
-    border: 0;
     font-size: 20px;
     font-weight: bold;
     color: #fff;
+    border: 0;
     border-radius: 3px;
 
     &:hover {

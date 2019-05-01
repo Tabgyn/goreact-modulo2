@@ -15,21 +15,10 @@ export default class Main extends Component {
     repositories: [],
   };
 
-  componentDidMount() {
-    const localState = JSON.parse(localStorage.getItem('myState'));
+  async componentDidMount() {
+    this.setState({ loading: true });
 
-    if (localState) {
-      this.setState({ repositories: localState.repositories });
-    }
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    const { repositories } = this.state;
-    if (nextState.repositories !== repositories && typeof Storage !== 'undefined') {
-      localStorage.setItem('myState', JSON.stringify(nextState));
-    }
-
-    return true;
+    this.setState({ loading: false, repositories: await this.getLocalRepositories() });
   }
 
   handleAddRepository = async (e) => {
@@ -40,23 +29,64 @@ export default class Main extends Component {
     const { repositoryInput, repositories } = this.state;
 
     try {
-      const { data: repository } = await api.get(`repos/${repositoryInput}`);
-
-      repository.lastCommit = moment(repository.pushed_at).fromNow();
-
-      if (repositories.find(repo => repo.id === repository.id)) {
-        throw new Error('Repository already added');
-      }
+      const repository = await this.getRepository(repositoryInput);
 
       this.setState({
         repositoryInput: '',
         repositories: [...repositories, repository],
         repositoryError: false,
       });
+
+      const localRepositories = await this.getLocalRepositories();
+
+      await localStorage.setItem(
+        'myRepositories',
+        JSON.stringify([...localRepositories, repository]),
+      );
     } catch (error) {
       this.setState({ repositoryError: true });
     } finally {
       this.setState({ loading: false });
+    }
+  };
+
+  getRepository = async (name) => {
+    const { data: repository } = await api.get(`repos/${name}`);
+
+    repository.lastCommit = moment(repository.pushed_at).fromNow();
+
+    return repository;
+  };
+
+  getLocalRepositories = async () => JSON.parse(await localStorage.getItem('myRepositories')) || [];
+
+  handleDeleteRepository = async (id) => {
+    const { repositories } = this.state;
+
+    const keptRepositories = repositories.filter(repo => repo.id !== id);
+
+    this.setState({ repositories: keptRepositories });
+
+    await localStorage.setItem('myRepositories', JSON.stringify(keptRepositories));
+  };
+
+  handleUpdateRepositories = async (id) => {
+    const { repositories } = this.state;
+
+    const repository = repositories.find(repo => repo.id === id);
+
+    try {
+      const updated = await this.getRepository(repository.full_name);
+
+      this.setState({
+        repositoryError: false,
+        repositoryInput: '',
+        repositories: repositories.map(repo => (repo.id === updated.id ? updated : repo)),
+      });
+
+      await localStorage.setItem('myRepositories', JSON.stringify(repositories));
+    } catch (err) {
+      this.setState({ repositoryError: true });
     }
   };
 
@@ -78,7 +108,11 @@ export default class Main extends Component {
           <button type="submit">{loading ? <i className="fa fa-spinner fa-pulse" /> : 'Ok'}</button>
         </Form>
 
-        <CompareList repositories={repositories} />
+        <CompareList
+          repositories={repositories}
+          deleteHandler={this.handleDeleteRepository}
+          updateHandler={this.handleUpdateRepositories}
+        />
       </Container>
     );
   }

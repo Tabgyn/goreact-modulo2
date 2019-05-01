@@ -58,4 +58,37 @@ export const Repository = styled.div`
       }
     }
   }
+
+  .buttonContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    button {
+      width: 80px;
+      height: 55px;
+      padding: 0 20px;
+      margin: 10px;
+      font-size: 20px;
+      color: #fff;
+      border: 0;
+      border-radius: 3px;
+    }
+
+    .delete {
+      background: #aa3f39;
+
+      &:hover {
+        background: #801a15;
+      }
+    }
+
+    .update {
+      background: #2e4172;
+
+      &:hover {
+        background: #162955;
+      }
+    }
+  }
 `;
